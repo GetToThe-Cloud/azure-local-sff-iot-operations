@@ -16,6 +16,8 @@ Scripts en blogmateriaal bij de [gettothe.cloud](https://gettothe.cloud)-serie o
 | `docs/part-1-azure-local-sff-hyper-v.md` | Dezelfde blogpost als Markdown |
 | `docs/part-2-azure-local-sff-provisioning.docx` | Blogpost deel 2 (Engels): provisioning, JIT-toegang via PIM en K3s |
 | `docs/part-2-azure-local-sff-provisioning.md` | Dezelfde blogpost als Markdown |
+| `docs/part-3-azure-local-sff-arc-k3s.docx` | Blogpost deel 3 (Engels): K3s koppelen aan Azure Arc, met de valkuilen onderweg |
+| `docs/part-3-azure-local-sff-arc-k3s.md` | Dezelfde blogpost als Markdown |
 | `docs/azure-local-sff-identity-prerequisites.docx` | Blogpost (Engels): deep dive in `Test-AzLocalSffPrereqs.ps1` |
 | `docs/azure-local-sff-identity-prerequisites.md` | Dezelfde blogpost als Markdown |
 
