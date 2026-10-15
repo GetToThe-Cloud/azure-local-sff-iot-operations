@@ -41,6 +41,13 @@ Get-NetAdapter -Physical | Where-Object Status -eq 'Up'
 New-VMSwitch -Name 'EXTERNAL' -NetAdapterName '<naam van je netwerkkaart>' -AllowManagementOS $true
 ```
 
+Staat je Hyper-V host niet op UTC, zet hem dan tijdelijk op UTC voordat je de VM voor het eerst start. Hyper-V geeft de VM bij het opstarten de lokale tijd van de host mee, de maintenance environment leest die als UTC en je voucher is dan pas uren later geldig in Azure ("Certificate is not yet valid").
+
+```powershell
+$hostTz = (Get-TimeZone).Id
+Set-TimeZone -Id 'UTC'
+```
+
 Maak de VM aan en start hem op een Hyper-V host (als administrator).
 
 ```powershell
@@ -56,6 +63,14 @@ Wacht tot de console `[Succeeded] Maintenance environment setup completed succes
 ```
 
 Haal tot slot met de Configurator App de ownership voucher op (`edgeuser` / `Password1`, de standaardgegevens van de maintenance environment). Die voucher gebruik je in deel 2 om de machine in Azure Arc te claimen.
+
+Controleer daarna of de klok van de VM klopt en zet de host pas dan terug in zijn eigen tijdzone.
+
+```powershell
+ssh edgeuser@<vm-ip> "date -u"
+[DateTime]::UtcNow.ToString('u')
+Set-TimeZone -Id $hostTz
+```
 
 ## Let op
 
