@@ -12,7 +12,8 @@ Scripts en blogmateriaal bij de [gettothe.cloud](https://gettothe.cloud)-serie o
 | `scripts/Test-AzLocalSffPrereqs.ps1` | Controleert Azure RBAC, de Entra-rol en de operator-groep (stap 2) |
 | `scripts/02-New-AzLocalSffVm.ps1` | Maakt de Hyper-V VM aan volgens de SFF-eisen (stap 5) |
 | `scripts/03-Set-AzLocalSffBootFromDisk.ps1` | Zet de OS-disk vooraan in de boot-volgorde (stap 6) |
-| `docs/deel-1-azure-local-sff-hyper-v.docx` | Blogpost deel 1: van subscription tot ownership voucher |
+| `docs/part-1-azure-local-sff-hyper-v.docx` | Blogpost deel 1 (Engels): from subscription to ownership voucher |
+| `docs/part-1-azure-local-sff-hyper-v.md` | Dezelfde blogpost als Markdown |
 
 ## Deel 1 in het kort
 
