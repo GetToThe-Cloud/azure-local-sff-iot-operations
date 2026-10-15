@@ -1,0 +1,10 @@
+# Ownership vouchers en SSH private keys
+*.pem
+*.key
+
+# Lokale ISO's en disks
+*.iso
+*.vhdx
+
+# Office lock files
+~$*
