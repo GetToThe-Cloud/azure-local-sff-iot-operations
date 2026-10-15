@@ -14,6 +14,8 @@ Scripts en blogmateriaal bij de [gettothe.cloud](https://gettothe.cloud)-serie o
 | `scripts/03-Set-AzLocalSffBootFromDisk.ps1` | Zet de OS-disk vooraan in de boot-volgorde (stap 6) |
 | `docs/part-1-azure-local-sff-hyper-v.docx` | Blogpost deel 1 (Engels): from subscription to ownership voucher |
 | `docs/part-1-azure-local-sff-hyper-v.md` | Dezelfde blogpost als Markdown |
+| `docs/part-2-azure-local-sff-provisioning.docx` | Blogpost deel 2 (Engels): provisioning, JIT-toegang via PIM en K3s |
+| `docs/part-2-azure-local-sff-provisioning.md` | Dezelfde blogpost als Markdown |
 | `docs/azure-local-sff-identity-prerequisites.docx` | Blogpost (Engels): deep dive in `Test-AzLocalSffPrereqs.ps1` |
 | `docs/azure-local-sff-identity-prerequisites.md` | Dezelfde blogpost als Markdown |
 
