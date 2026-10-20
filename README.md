@@ -13,6 +13,7 @@ Scripts en blogmateriaal bij de [gettothe.cloud](https://gettothe.cloud)-serie o
 | `scripts/02-New-AzLocalSffVm.ps1` | Maakt de Hyper-V VM aan volgens de SFF-eisen (stap 5) |
 | `scripts/03-Set-AzLocalSffBootFromDisk.ps1` | Zet de OS-disk vooraan in de boot-volgorde (stap 6) |
 | `scripts/Enable-AioHomeAssistantMqtt.ps1` | Zet een TLS-listener met X.509 op de AIO MQTT broker en schrijft de Mosquitto-bridgeconfig voor Home Assistant (deel 5) |
+| `scripts/Enable-AioHomeAssistantAdls.ps1` | Maakt een storage account met hierarchical namespace, een Delta-schema, een dataflow-endpoint en een dataflow naar ADLS Gen2, en schrijft het Home Assistant-package en de DuckDB-queries (deel 6) |
 | `docs/part-1-azure-local-sff-hyper-v.docx` | Blogpost deel 1 (Engels): from subscription to ownership voucher |
 | `docs/part-1-azure-local-sff-hyper-v.md` | Dezelfde blogpost als Markdown |
 | `docs/part-2-azure-local-sff-provisioning.docx` | Blogpost deel 2 (Engels): provisioning, JIT-toegang via PIM en K3s |
@@ -23,6 +24,8 @@ Scripts en blogmateriaal bij de [gettothe.cloud](https://gettothe.cloud)-serie o
 | `docs/part-4-azure-local-sff-iot-operations.md` | Dezelfde blogpost als Markdown |
 | `docs/part-5-azure-local-sff-home-assistant-mqtt.docx` | Blogpost deel 5 (Engels): Home Assistant via een Mosquitto-bridge koppelen aan de AIO MQTT broker, met TLS en X.509 |
 | `docs/part-5-azure-local-sff-home-assistant-mqtt.md` | Dezelfde blogpost als Markdown |
+| `docs/part-6-azure-local-sff-home-assistant-adls.docx` | Blogpost deel 6 (Engels): Home Assistant-data via een AIO-dataflow als Delta-tabel in Azure Data Lake Storage Gen2, uitlezen met DuckDB |
+| `docs/part-6-azure-local-sff-home-assistant-adls.md` | Dezelfde blogpost als Markdown |
 | `docs/azure-local-sff-identity-prerequisites.docx` | Blogpost (Engels): deep dive in `Test-AzLocalSffPrereqs.ps1` |
 | `docs/azure-local-sff-identity-prerequisites.md` | Dezelfde blogpost als Markdown |
 
