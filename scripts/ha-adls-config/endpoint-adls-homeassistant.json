@@ -1,0 +1,14 @@
+{
+  "endpointType": "DataLakeStorage",
+  "dataLakeStorageSettings": {
+    "authentication": {
+      "method": "SystemAssignedManagedIdentity",
+      "systemAssignedManagedIdentitySettings": {}
+    },
+    "batching": {
+      "latencySeconds": 300,
+      "maxMessages": 100000
+    },
+    "host": "https://stlzazlocalsffaiodl01.blob.core.windows.net"
+  }
+}

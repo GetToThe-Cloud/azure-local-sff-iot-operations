@@ -1,0 +1,85 @@
+{
+  "mode": "Enabled",
+  "operations": [
+    {
+      "operationType": "Source",
+      "sourceSettings": {
+        "endpointRef": "default",
+        "serializationFormat": "Json",
+        "dataSources": [
+          "homeassistant/statestream/json/#"
+        ]
+      }
+    },
+    {
+      "operationType": "BuiltInTransformation",
+      "builtInTransformationSettings": {
+        "serializationFormat": "Delta",
+        "schemaRef": "aio-sr://srns-azlsff-aio-01/ha-state-adls:1",
+        "map": [
+          {
+            "inputs": [
+              "entity_id"
+            ],
+            "output": "entity_id"
+          },
+          {
+            "inputs": [
+              "domain"
+            ],
+            "output": "domain"
+          },
+          {
+            "inputs": [
+              "friendly_name"
+            ],
+            "output": "friendly_name"
+          },
+          {
+            "inputs": [
+              "state"
+            ],
+            "output": "state"
+          },
+          {
+            "inputs": [
+              "value"
+            ],
+            "output": "value"
+          },
+          {
+            "inputs": [
+              "unit"
+            ],
+            "output": "unit"
+          },
+          {
+            "inputs": [
+              "device_class"
+            ],
+            "output": "device_class"
+          },
+          {
+            "inputs": [
+              "last_changed"
+            ],
+            "output": "last_changed"
+          },
+          {
+            "inputs": [
+              "last_updated"
+            ],
+            "output": "last_updated"
+          }
+        ]
+      }
+    },
+    {
+      "operationType": "Destination",
+      "destinationSettings": {
+        "endpointRef": "adls-homeassistant",
+        "dataDestination": "homeassistant"
+      }
+    }
+  ]
+}
