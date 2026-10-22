@@ -14,20 +14,8 @@ Scripts and blog material for the [gettothe.cloud](https://gettothe.cloud) serie
 | `scripts/03-Set-AzLocalSffBootFromDisk.ps1` | Moves the OS disk to the top of the boot order (step 6) |
 | `scripts/Enable-AioHomeAssistantMqtt.ps1` | Sets up a TLS listener with X.509 on the AIO MQTT broker and writes the Mosquitto bridge config for Home Assistant (part 5) |
 | `scripts/Enable-AioHomeAssistantAdls.ps1` | Creates a storage account with hierarchical namespace, a Delta schema, a dataflow endpoint and a dataflow to ADLS Gen2, and writes the Home Assistant package and the DuckDB queries (part 6) |
-| `docs/part-1-azure-local-sff-hyper-v.docx` | Blog post part 1: from subscription to ownership voucher |
-| `docs/part-1-azure-local-sff-hyper-v.md` | The same blog post as Markdown |
-| `docs/part-2-azure-local-sff-provisioning.docx` | Blog post part 2: provisioning, JIT access via PIM and K3s |
-| `docs/part-2-azure-local-sff-provisioning.md` | The same blog post as Markdown |
-| `docs/part-3-azure-local-sff-arc-k3s.docx` | Blog post part 3: connecting K3s to Azure Arc, including the pitfalls along the way |
-| `docs/part-3-azure-local-sff-arc-k3s.md` | The same blog post as Markdown |
-| `docs/part-4-azure-local-sff-iot-operations.docx` | Blog post part 4: deploying Azure IoT Operations, with schema registry, Device Registry namespace and secure settings |
-| `docs/part-4-azure-local-sff-iot-operations.md` | The same blog post as Markdown |
-| `docs/part-5-azure-local-sff-home-assistant-mqtt.docx` | Blog post part 5: connecting Home Assistant to the AIO MQTT broker through a Mosquitto bridge, with TLS and X.509 |
-| `docs/part-5-azure-local-sff-home-assistant-mqtt.md` | The same blog post as Markdown |
-| `docs/part-6-azure-local-sff-home-assistant-adls.docx` | Blog post part 6: Home Assistant data as a Delta table in Azure Data Lake Storage Gen2 through an AIO dataflow, queried with DuckDB |
-| `docs/part-6-azure-local-sff-home-assistant-adls.md` | The same blog post as Markdown |
-| `docs/azure-local-sff-identity-prerequisites.docx` | Blog post: deep dive into `Test-AzLocalSffPrereqs.ps1` |
-| `docs/azure-local-sff-identity-prerequisites.md` | The same blog post as Markdown |
+| `scripts/Enable-AioHomeAssistantAdx.ps1` | Sends Home Assistant states to Azure Data Explorer through an AIO dataflow and sets up the whole ADX side: cluster (Dev/Test SKU), database, raw and typed tables with an update policy, permissions, Delta schema, dataflow endpoint and dataflow. Includes a self-test via the mqtt-client pod and writes the Home Assistant automation |
+| `scripts/ha-adls-config/` | Example output of `Enable-AioHomeAssistantAdls.ps1`: schema, dataflow endpoint and dataflow definitions, the Home Assistant package and automation, and the DuckDB queries |
 
 ## Part 1 in brief
 
