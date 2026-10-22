@@ -1,66 +1,66 @@
-# Azure Local SFF met Azure IoT Operations
+# Azure Local SFF with Azure IoT Operations
 
-Scripts en blogmateriaal bij de [gettothe.cloud](https://gettothe.cloud)-serie over Azure Local small form factor (SFF), op dit moment in preview. In de serie zet ik SFF neer in een Hyper-V lab en laat ik er uiteindelijk Azure IoT Operations op draaien.
+Scripts and blog material for the [gettothe.cloud](https://gettothe.cloud) series on Azure Local small form factor (SFF), currently in preview. In this series I set up SFF in a Hyper-V lab and eventually run Azure IoT Operations on it.
 
-> SFF in een VM is volgens Microsoft alleen bedoeld voor test en evaluatie. Voor productie heb je ondersteunde hardware nodig.
+> According to Microsoft, SFF in a VM is intended for testing and evaluation only. For production you need supported hardware.
 
-## Inhoud
+## Contents
 
-| Pad | Wat |
+| Path | What |
 | --- | --- |
-| `scripts/01-Register-AzLocalSffProviders.ps1` | Registreert de AzureLocalZTP-feature en de resource providers (stap 1) |
-| `scripts/Test-AzLocalSffPrereqs.ps1` | Controleert Azure RBAC, de Entra-rol en de operator-groep (stap 2) |
-| `scripts/02-New-AzLocalSffVm.ps1` | Maakt de Hyper-V VM aan volgens de SFF-eisen (stap 5) |
-| `scripts/03-Set-AzLocalSffBootFromDisk.ps1` | Zet de OS-disk vooraan in de boot-volgorde (stap 6) |
-| `scripts/Enable-AioHomeAssistantMqtt.ps1` | Zet een TLS-listener met X.509 op de AIO MQTT broker en schrijft de Mosquitto-bridgeconfig voor Home Assistant (deel 5) |
-| `scripts/Enable-AioHomeAssistantAdls.ps1` | Maakt een storage account met hierarchical namespace, een Delta-schema, een dataflow-endpoint en een dataflow naar ADLS Gen2, en schrijft het Home Assistant-package en de DuckDB-queries (deel 6) |
-| `docs/part-1-azure-local-sff-hyper-v.docx` | Blogpost deel 1 (Engels): from subscription to ownership voucher |
-| `docs/part-1-azure-local-sff-hyper-v.md` | Dezelfde blogpost als Markdown |
-| `docs/part-2-azure-local-sff-provisioning.docx` | Blogpost deel 2 (Engels): provisioning, JIT-toegang via PIM en K3s |
-| `docs/part-2-azure-local-sff-provisioning.md` | Dezelfde blogpost als Markdown |
-| `docs/part-3-azure-local-sff-arc-k3s.docx` | Blogpost deel 3 (Engels): K3s koppelen aan Azure Arc, met de valkuilen onderweg |
-| `docs/part-3-azure-local-sff-arc-k3s.md` | Dezelfde blogpost als Markdown |
-| `docs/part-4-azure-local-sff-iot-operations.docx` | Blogpost deel 4 (Engels): Azure IoT Operations deployen, met schema registry, Device Registry-namespace en secure settings |
-| `docs/part-4-azure-local-sff-iot-operations.md` | Dezelfde blogpost als Markdown |
-| `docs/part-5-azure-local-sff-home-assistant-mqtt.docx` | Blogpost deel 5 (Engels): Home Assistant via een Mosquitto-bridge koppelen aan de AIO MQTT broker, met TLS en X.509 |
-| `docs/part-5-azure-local-sff-home-assistant-mqtt.md` | Dezelfde blogpost als Markdown |
-| `docs/part-6-azure-local-sff-home-assistant-adls.docx` | Blogpost deel 6 (Engels): Home Assistant-data via een AIO-dataflow als Delta-tabel in Azure Data Lake Storage Gen2, uitlezen met DuckDB |
-| `docs/part-6-azure-local-sff-home-assistant-adls.md` | Dezelfde blogpost als Markdown |
-| `docs/azure-local-sff-identity-prerequisites.docx` | Blogpost (Engels): deep dive in `Test-AzLocalSffPrereqs.ps1` |
-| `docs/azure-local-sff-identity-prerequisites.md` | Dezelfde blogpost als Markdown |
+| `scripts/01-Register-AzLocalSffProviders.ps1` | Registers the AzureLocalZTP feature and the resource providers (step 1) |
+| `scripts/Test-AzLocalSffPrereqs.ps1` | Checks Azure RBAC, the Entra role and the operator group (step 2) |
+| `scripts/02-New-AzLocalSffVm.ps1` | Creates the Hyper-V VM according to the SFF requirements (step 5) |
+| `scripts/03-Set-AzLocalSffBootFromDisk.ps1` | Moves the OS disk to the top of the boot order (step 6) |
+| `scripts/Enable-AioHomeAssistantMqtt.ps1` | Sets up a TLS listener with X.509 on the AIO MQTT broker and writes the Mosquitto bridge config for Home Assistant (part 5) |
+| `scripts/Enable-AioHomeAssistantAdls.ps1` | Creates a storage account with hierarchical namespace, a Delta schema, a dataflow endpoint and a dataflow to ADLS Gen2, and writes the Home Assistant package and the DuckDB queries (part 6) |
+| `docs/part-1-azure-local-sff-hyper-v.docx` | Blog post part 1: from subscription to ownership voucher |
+| `docs/part-1-azure-local-sff-hyper-v.md` | The same blog post as Markdown |
+| `docs/part-2-azure-local-sff-provisioning.docx` | Blog post part 2: provisioning, JIT access via PIM and K3s |
+| `docs/part-2-azure-local-sff-provisioning.md` | The same blog post as Markdown |
+| `docs/part-3-azure-local-sff-arc-k3s.docx` | Blog post part 3: connecting K3s to Azure Arc, including the pitfalls along the way |
+| `docs/part-3-azure-local-sff-arc-k3s.md` | The same blog post as Markdown |
+| `docs/part-4-azure-local-sff-iot-operations.docx` | Blog post part 4: deploying Azure IoT Operations, with schema registry, Device Registry namespace and secure settings |
+| `docs/part-4-azure-local-sff-iot-operations.md` | The same blog post as Markdown |
+| `docs/part-5-azure-local-sff-home-assistant-mqtt.docx` | Blog post part 5: connecting Home Assistant to the AIO MQTT broker through a Mosquitto bridge, with TLS and X.509 |
+| `docs/part-5-azure-local-sff-home-assistant-mqtt.md` | The same blog post as Markdown |
+| `docs/part-6-azure-local-sff-home-assistant-adls.docx` | Blog post part 6: Home Assistant data as a Delta table in Azure Data Lake Storage Gen2 through an AIO dataflow, queried with DuckDB |
+| `docs/part-6-azure-local-sff-home-assistant-adls.md` | The same blog post as Markdown |
+| `docs/azure-local-sff-identity-prerequisites.docx` | Blog post: deep dive into `Test-AzLocalSffPrereqs.ps1` |
+| `docs/azure-local-sff-identity-prerequisites.md` | The same blog post as Markdown |
 
-## Deel 1 in het kort
+## Part 1 in brief
 
-Log in met de Azure CLI en bereid de subscription voor.
+Sign in with the Azure CLI and prepare the subscription.
 
 ```powershell
 az login
 .\scripts\01-Register-AzLocalSffProviders.ps1 -SubscriptionId '<subscription-id>'
 ```
 
-Controleer daarna of je account de juiste rechten heeft. Je hebt Owner nodig, of Contributor plus Role Based Access Control Administrator (active en permanent), minimaal Directory Readers in Entra en een Entra security group voor de operators.
+Next, check that your account has the right permissions. You need Owner, or Contributor plus Role Based Access Control Administrator (active and permanent), at least Directory Readers in Entra, and an Entra security group for the operators.
 
 ```powershell
-.\scripts\Test-AzLocalSffPrereqs.ps1 -SubscriptionId '<subscription-id>' -OperatorGroup '<groepsnaam of object-id>'
+.\scripts\Test-AzLocalSffPrereqs.ps1 -SubscriptionId '<subscription-id>' -OperatorGroup '<group name or object ID>'
 ```
 
-Download in de Azure portal de Maintenance OS ISO en de Configurator App via **Azure Arc > Operations > Machine Provisioning (preview) > Get started > View downloads**.
+In the Azure portal, download the Maintenance OS ISO and the Configurator App via **Azure Arc > Operations > Machine Provisioning (preview) > Get started > View downloads**.
 
-De VM hangt aan een external Hyper-V switch op een LAN met DHCP en internet. Heb je die nog niet, maak hem dan aan. De host verliest daarbij kort zijn netwerkverbinding.
+The VM is connected to an external Hyper-V switch on a LAN with DHCP and internet access. If you don't have one yet, create it. The host briefly loses its network connection while you do this.
 
 ```powershell
 Get-NetAdapter -Physical | Where-Object Status -eq 'Up'
-New-VMSwitch -Name 'EXTERNAL' -NetAdapterName '<naam van je netwerkkaart>' -AllowManagementOS $true
+New-VMSwitch -Name 'EXTERNAL' -NetAdapterName '<name of your network adapter>' -AllowManagementOS $true
 ```
 
-Staat je Hyper-V host niet op UTC, zet hem dan tijdelijk op UTC voordat je de VM voor het eerst start. Hyper-V geeft de VM bij het opstarten de lokale tijd van de host mee, de maintenance environment leest die als UTC en je voucher is dan pas uren later geldig in Azure ("Certificate is not yet valid").
+If your Hyper-V host is not set to UTC, switch it to UTC temporarily before you start the VM for the first time. At boot, Hyper-V passes the host's local time to the VM, the maintenance environment reads it as UTC, and your voucher then only becomes valid in Azure hours later ("Certificate is not yet valid").
 
 ```powershell
 $hostTz = (Get-TimeZone).Id
 Set-TimeZone -Id 'UTC'
 ```
 
-Maak de VM aan en start hem op een Hyper-V host (als administrator).
+Create the VM and start it on a Hyper-V host (as administrator).
 
 ```powershell
 .\scripts\02-New-AzLocalSffVm.ps1 -Path 'F:\VMs' -IsoPath 'C:\Isos\provision-os.iso'
@@ -68,15 +68,15 @@ Start-VM 'linuxsff-vm'
 vmconnect.exe localhost 'linuxsff-vm'
 ```
 
-Wacht tot de console `[Succeeded] Maintenance environment setup completed successfully` toont, met een IP-adres en `Connectivity: Online`. Zet daarna de disk vooraan in de boot-volgorde, zodat de ISO na een reboot niet opnieuw installeert.
+Wait until the console shows `[Succeeded] Maintenance environment setup completed successfully`, along with an IP address and `Connectivity: Online`. Then move the disk to the top of the boot order, so the ISO doesn't reinstall after a reboot.
 
 ```powershell
 .\scripts\03-Set-AzLocalSffBootFromDisk.ps1 -VMName 'linuxsff-vm'
 ```
 
-Haal tot slot met de Configurator App de ownership voucher op (`edgeuser` / `Password1`, de standaardgegevens van de maintenance environment). Die voucher gebruik je in deel 2 om de machine in Azure Arc te claimen.
+Finally, use the Configurator App to retrieve the ownership voucher (`edgeuser` / `Password1`, the default credentials of the maintenance environment). You use that voucher in part 2 to claim the machine in Azure Arc.
 
-Controleer daarna of de klok van de VM klopt en zet de host pas dan terug in zijn eigen tijdzone.
+After that, check that the VM's clock is correct, and only then switch the host back to its own time zone.
 
 ```powershell
 ssh edgeuser@<vm-ip> "date -u"
@@ -84,11 +84,11 @@ ssh edgeuser@<vm-ip> "date -u"
 Set-TimeZone -Id $hostTz
 ```
 
-## Let op
+## Note
 
-Ownership vouchers en SSH-keys zijn `.pem`-bestanden en horen niet in Git. De `.gitignore` sluit ze uit.
+Ownership vouchers and SSH keys are `.pem` files and don't belong in Git. The `.gitignore` excludes them.
 
-## Bronnen
+## Sources
 
 - [What are small form factor deployments of Azure Local (preview)?](https://learn.microsoft.com/azure/azure-local/small-form-factor/small-form-factor-overview?view=azloc-2609)
 - [Prepare to deploy Azure Local on small form factor devices (preview)](https://learn.microsoft.com/azure/azure-local/small-form-factor/small-form-factor-prepare-to-deploy?view=azloc-2609)
