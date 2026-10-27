@@ -13,6 +13,7 @@
                       so the lake step takes seconds instead of minutes; the original value is saved for Restore
                     - deploys the mqtt-client pod the demo uses to watch the broker
                     - checks read access to the Delta table, DuckDB and, with -HomeAssistantUrl, the demo entities
+                      (the Home Assistant token is asked for first, before the slow checks)
     -Mode Run       The demo itself, in steps with a pause between them (-NoPause to run straight through):
                     1. The chain and its health: node, data flow, endpoint batching, latest Delta commit
                     2. Home Assistant -> AIO broker: change the value, the script shows the message arriving at the edge
@@ -61,7 +62,9 @@
 
 .PARAMETER HomeAssistantUrl
     Base URL of Home Assistant, for example http://homeassistant.local:8123. Needed for -Trigger HomeAssistantApi;
-    with -Mode Prepare it also checks that the demo entities exist.
+    with -Mode Prepare it also checks that the demo entities exist. The long-lived access token comes from
+    $env:HA_TOKEN or a prompt; the script checks it right away and keeps it in $env:HA_TOKEN for this session only.
+    The default demo (-Trigger Manual) needs neither.
 
 .PARAMETER DemoLatencySeconds
     Batching latency that Prepare sets on the endpoint. Defaults to 10.
@@ -128,6 +131,8 @@ $inv           = [Globalization.CultureInfo]::InvariantCulture
 $degC          = [string][char]0x00B0 + 'C'   # kept out of the source so the file stays ASCII (PS 5.1 reads it as ANSI)
 $script:Watch  = $null
 $script:PodCreatedByRun = $false
+$script:SummaryJob = $null
+$script:HaHeaders  = $null
 
 #region Helpers: output
 function Write-Step   { param([string]$Text) Write-Host "`n==> $Text" -ForegroundColor Cyan }
@@ -158,10 +163,16 @@ function Write-Ticker {
 }
 function Clear-Ticker { Write-Host ("`r" + (' ' * 80) + "`r") -NoNewline }
 
+function Clear-KeyBuffer {
+    # Drops keys pressed while the script was busy, so they don't answer the next prompt
+    try { while ([Console]::KeyAvailable) { [void][Console]::ReadKey($true) } } catch { }
+}
+
 function Wait-Presenter {
     param([string]$Next)
     if ($NoPause) { return }
     Write-Host ''
+    Clear-KeyBuffer
     Read-Host "    Press Enter for: $Next" | Out-Null
 }
 
@@ -254,7 +265,8 @@ function ConvertTo-CommandLine {
 }
 
 function Start-Proc {
-    # Starts a native process with redirected, UTF-8 decoded output (the payload contains a degree sign)
+    # Starts a native process with redirected, UTF-8 decoded output (the payload contains a degree sign).
+    # Its input is closed straight away, so it never reads from the console and can't take your key presses.
     param([string]$FilePath, [string[]]$Arguments)
     $utf8 = New-Object System.Text.UTF8Encoding $false
     $psi = New-Object System.Diagnostics.ProcessStartInfo
@@ -262,11 +274,14 @@ function Start-Proc {
     $psi.Arguments              = ConvertTo-CommandLine $Arguments
     $psi.UseShellExecute        = $false
     $psi.CreateNoWindow         = $true
+    $psi.RedirectStandardInput  = $true
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError  = $true
     $psi.StandardOutputEncoding = $utf8
     $psi.StandardErrorEncoding  = $utf8
-    return [System.Diagnostics.Process]::Start($psi)
+    $p = [System.Diagnostics.Process]::Start($psi)
+    try { $p.StandardInput.Close() } catch { }
+    return $p
 }
 
 function Invoke-Proc {
@@ -544,24 +559,52 @@ function ConvertTo-SqlPath {
     return ($Path -replace '\\', '/') -replace "'", "''"
 }
 
-function Invoke-DuckDbCsv {
-    # Runs SQL that ends in COPY (...) TO '__OUT__'; returns the rows of that CSV
-    param([string]$Sql, [string]$Name, [int]$TimeoutSeconds = 300)
+function Start-DuckDbCsv {
+    # Starts SQL that ends in COPY (...) TO '__OUT__' in a DuckDB process and returns right away
+    param([string]$Sql, [string]$Name)
     $sqlFile = Join-Path $script:WorkPath "$Name.sql"
     $csvFile = Join-Path $script:WorkPath "$Name.csv"
     Remove-Item -LiteralPath $csvFile -ErrorAction SilentlyContinue
     Write-TextFile $sqlFile $Sql.Replace('__OUT__', (ConvertTo-SqlPath $csvFile))
     # .read instead of -f: works in every DuckDB CLI version and returns exit code 1 on an error
-    $r = Invoke-Proc $script:duckdb @('-bail', '-c', ".read '$($sqlFile -replace '\\', '/')'") -TimeoutSeconds $TimeoutSeconds -AllowFailure
-    if ($r.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $csvFile)) {
+    $p = Start-Proc $script:duckdb @('-bail', '-c', ".read '$($sqlFile -replace '\\', '/')'")
+    return [pscustomobject]@{
+        Process = $p; Out = $p.StandardOutput.ReadToEndAsync(); Err = $p.StandardError.ReadToEndAsync()
+        Csv = $csvFile; Name = $Name; Started = Get-Date
+    }
+}
+
+function Receive-DuckDbCsv {
+    # Waits for a Start-DuckDbCsv job and returns the rows of its CSV. -Activity shows a ticker while it waits.
+    param($Job, [int]$TimeoutSeconds = 300, [string]$Activity)
+    $p = $Job.Process
+    while (-not $p.WaitForExit(500)) {
+        $elapsed = ((Get-Date) - $Job.Started).TotalSeconds
+        if ($elapsed -gt $TimeoutSeconds) {
+            try { $p.Kill() } catch { }
+            if ($Activity) { Clear-Ticker }
+            throw "DuckDB didn't finish within $TimeoutSeconds s."
+        }
+        if ($Activity) { Write-Ticker ("{0} ... {1:0} s" -f $Activity, $elapsed) }
+    }
+    $p.WaitForExit()
+    if ($Activity) { Clear-Ticker }
+    $code = $p.ExitCode
+    $full = ("$($Job.Err.Result)`n$($Job.Out.Result)").Trim()
+    $p.Dispose()
+    if ($code -ne 0 -or -not (Test-Path -LiteralPath $Job.Csv)) {
         # Full message to a log, first line on screen
-        $full = ("$($r.Error)`n$($r.Output)").Trim()
-        $log  = Join-Path $script:WorkPath "$Name.error.log"
+        $log = Join-Path $script:WorkPath "$($Job.Name).error.log"
         Write-TextFile $log $full
         $first = @($full -split "`r?`n" | Where-Object { $_.Trim() })[0]
         throw "DuckDB: $first (details: $log)"
     }
-    return @(Import-Csv -LiteralPath $csvFile -Encoding UTF8)
+    return @(Import-Csv -LiteralPath $Job.Csv -Encoding UTF8)
+}
+
+function Invoke-DuckDbCsv {
+    param([string]$Sql, [string]$Name, [int]$TimeoutSeconds = 300)
+    return (Receive-DuckDbCsv (Start-DuckDbCsv $Sql $Name) -TimeoutSeconds $TimeoutSeconds)
 }
 
 function Get-SummarySql {
@@ -734,15 +777,35 @@ function Set-EndpointLatency {
 }
 
 function Get-HaHeaders {
-    $token = $env:HA_TOKEN
-    if (-not $token) {
-        $sec   = Read-Host '    Home Assistant long-lived access token' -AsSecureString
-        $bstr  = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)
-        try { $token = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) }
-        finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
-        $env:HA_TOKEN = $token   # only for this session, so the next run doesn't ask again
+    # Token from $env:HA_TOKEN or a prompt, checked against /api/ so a wrong or empty token shows up at once
+    if ($script:HaHeaders) { return $script:HaHeaders }
+    $base = $HomeAssistantUrl.TrimEnd('/')
+    for ($try = 1; $try -le 3; $try++) {
+        $token = $env:HA_TOKEN
+        if (-not $token) {
+            Clear-KeyBuffer
+            $sec  = Read-Host '    Home Assistant long-lived access token (Profile > Security), then Enter' -AsSecureString
+            $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)
+            try { $token = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) }
+            finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+            $token = "$token".Trim()
+            if (-not $token) { Write-Warn 'Empty token, try again.'; continue }
+        }
+        $headers = @{ Authorization = "Bearer $token" }
+        try {
+            Invoke-RestMethod -Uri "$base/api/" -Headers $headers -ErrorAction Stop | Out-Null
+        } catch {
+            $code = Get-HttpStatus $_
+            Remove-Item Env:HA_TOKEN -ErrorAction SilentlyContinue
+            if ($code -eq 401 -or $code -eq 403) { Write-Warn "Home Assistant rejected the token (HTTP $code), try again."; continue }
+            throw "Home Assistant at $base isn't reachable: $($_.Exception.Message)"
+        }
+        $env:HA_TOKEN = $token   # only for this PowerShell session, so the next run doesn't ask again
+        $script:HaHeaders = $headers
+        Write-Ok "Home Assistant accepted the token ($base)"
+        return $headers
     }
-    return @{ Authorization = "Bearer $token" }
+    throw "No valid Home Assistant token after 3 attempts. Tip: `$env:HA_TOKEN = '<token>' before you run the script."
 }
 #endregion
 
@@ -752,6 +815,25 @@ function Invoke-Prepare {
     $stateFile = Join-Path $script:WorkPath 'demo-state.json'
     $state = $null
     if (Test-Path -LiteralPath $stateFile) { $state = Get-Content -LiteralPath $stateFile -Raw | ConvertFrom-Json }
+
+    # Home Assistant first: the token prompt comes while you're still at the keyboard
+    if ($HomeAssistantUrl) {
+        Write-Step 'Home Assistant'
+        $headers = Get-HaHeaders
+        foreach ($e in @($SliderEntity, $DemoEntity)) {
+            try {
+                $s = Invoke-RestMethod -Uri "$($HomeAssistantUrl.TrimEnd('/'))/api/states/$e" -Headers $headers -ErrorAction Stop
+                Write-Ok "$e = $($s.state) $($s.attributes.unit_of_measurement)"
+            } catch {
+                $code = Get-HttpStatus $_
+                if ($code -eq 404) {
+                    Write-Warn "$e doesn't exist. Is aio_demo.yaml in /config/packages and did you restart Home Assistant?"
+                } else {
+                    Write-Warn "Couldn't read $e (HTTP $code): $($_.Exception.Message)"
+                }
+            }
+        }
+    }
 
     Write-Step 'Batching latency for the demo'
     if ($state -and $state.Instance -eq $Instance) {
@@ -795,22 +877,12 @@ function Invoke-Prepare {
                 $rows = Invoke-DuckDbCsv (Get-SummarySql $Ctx) 'prepare-summary'
                 $n = 0; foreach ($r in $rows) { $n += [long]$r.changes }
                 Write-Ok "delta_scan works: $n state changes from $($rows.Count) sensors in the last 24 hours ($(Format-Sec $sw.Elapsed.TotalSeconds))"
+                if ($sw.Elapsed.TotalSeconds -gt 30) {
+                    Write-Info 'The demo starts this query in the background at step 1, so it is normally done by step 4.'
+                }
             } catch {
                 Write-Warn "Step 4 (the 24-hour summary) won't work: $($_.Exception.Message)"
                 Write-Info 'The core demo (steps 1-3 and 5) doesn''t need it. Run with -SkipSummary, or check that az login works for DuckDB.'
-            }
-        }
-    }
-
-    if ($HomeAssistantUrl) {
-        Write-Step 'Home Assistant'
-        $headers = Get-HaHeaders
-        foreach ($e in @($SliderEntity, $DemoEntity)) {
-            try {
-                $s = Invoke-RestMethod -Uri "$($HomeAssistantUrl.TrimEnd('/'))/api/states/$e" -Headers $headers -ErrorAction Stop
-                Write-Ok "$e = $($s.state) $($s.attributes.unit_of_measurement)"
-            } catch {
-                Write-Warn "$e not found or not reachable ($(Get-HttpStatus $_)). Is aio_demo.yaml in /config/packages and did you restart Home Assistant?"
             }
         }
     }
@@ -845,6 +917,12 @@ function Invoke-Run {
     param($Ctx)
     $result = [ordered]@{}
 
+    # Ask for the Home Assistant token before the show starts, not in the middle of step 2
+    if ($Trigger -eq 'HomeAssistantApi') {
+        if (-not $HomeAssistantUrl) { throw '-Trigger HomeAssistantApi needs -HomeAssistantUrl.' }
+        Get-HaHeaders | Out-Null
+    }
+
     #--- Step 1: the chain
     Write-Host ''
     Write-Host '  =========================================================================' -ForegroundColor DarkCyan
@@ -859,6 +937,12 @@ function Invoke-Run {
                  Where-Object { $_.Name -like 'aio-dataflow-*' -and $_.Name -notlike '*operator*' })
     $running = @($dfPods | Where-Object { $_.Phase -eq 'Running' }).Count
     Update-LakeHeads $Ctx
+    # The 24-hour summary of step 4 reads the whole Delta log and takes a while: start it now, in the background
+    $summaryJob = $null
+    if (-not $SkipSummary -and $script:duckdb -and $null -ne $Ctx.TablePrefix) {
+        try { $summaryJob = Start-DuckDbCsv (Get-SummarySql $Ctx) 'summary'; $script:SummaryJob = $summaryJob }
+        catch { Write-Warn "Couldn't start the summary query for step 4: $($_.Exception.Message)" }
+    }
     $table   = if ($null -eq $Ctx.TablePrefix) { "container $($Ctx.Container) (no table yet)" }
                elseif ($Ctx.TablePrefix) { "container $($Ctx.Container), Delta table /$($Ctx.TablePrefix.TrimEnd('/'))" }
                else { "container $($Ctx.Container), Delta table in the root" }
@@ -1131,13 +1215,13 @@ COPY (
     $result['Delta commit'] = "$($found.Version), $file"
 
     #--- Step 4: what you can do with it
-    if (-not $SkipSummary -and $script:duckdb) {
+    if ($summaryJob) {
         Wait-Presenter 'step 4, query the data lake'
         Write-Stage 4 'Query the data lake directly: last 24 hours per sensor (DuckDB, no cluster)'
-        Write-Info 'DuckDB reads the Delta table in the storage account with your az login.'
+        Write-Info ("DuckDB reads the Delta table in the storage account with your az login (started at {0}, during step 1)." -f $summaryJob.Started.ToString('HH:mm:ss'))
         try {
-            $qs = [Diagnostics.Stopwatch]::StartNew()
-            $rows = Invoke-DuckDbCsv (Get-SummarySql $Ctx) 'summary'
+            $rows = Receive-DuckDbCsv $summaryJob -TimeoutSeconds 600 -Activity 'summary query still running'
+            $script:SummaryJob = $null
             $total = 0; foreach ($r in $rows) { $total += [long]$r.changes }
             $view = $rows | Sort-Object { [long]$_.changes } -Descending | Select-Object -First 12 | ForEach-Object {
                 [pscustomobject]@{
@@ -1154,7 +1238,7 @@ COPY (
             $tableText = ($view | Format-Table -AutoSize | Out-String -Width 200).TrimEnd()
             foreach ($l in ($tableText -split "`r?`n")) { if ($l.Trim()) { Write-Host "        $l" -ForegroundColor White } }
             Write-Host ''
-            Write-Ok ("{0} state changes from {1} sensors in the last 24 hours, queried in {2}" -f $total, $rows.Count, (Format-Sec $qs.Elapsed.TotalSeconds))
+            Write-Ok ("{0} state changes from {1} sensors in the last 24 hours, straight from the files in the lake" -f $total, $rows.Count)
         } catch {
             Write-Warn "Summary query failed: $($_.Exception.Message)"
         }
@@ -1203,5 +1287,6 @@ catch {
 }
 finally {
     Stop-BrokerWatch $script:Watch
+    if ($script:SummaryJob) { try { if (-not $script:SummaryJob.Process.HasExited) { $script:SummaryJob.Process.Kill() } } catch { } }
     if ($script:PodCreatedByRun) { Remove-MqttClient }
 }
