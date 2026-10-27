@@ -1,0 +1,49 @@
+# Home Assistant package for the Azure IoT Operations -> Azure Data Lake demo (Start-AioAdlsDemo.ps1).
+#
+# A slider you can move in front of your audience, and a temperature sensor that follows it. The sensor is in the
+# 'sensor' domain, so the automation from aio_adls.yaml publishes every change as JSON on
+# homeassistant/statestream/json/sensor.aio_demo_temperature, the Mosquitto bridge forwards it to the AIO broker and
+# the data flow writes it to the Delta table in Azure Data Lake Storage.
+#
+# 1. Copy this file to /config/packages/aio_demo.yaml (next to aio_adls.yaml; packages are already enabled for that one).
+# 2. Developer tools > YAML > Check configuration, then restart Home Assistant.
+# 3. Optional: add the dashboard card at the bottom of this file.
+# Remove the file (and restart) after the demo if you don't want the demo sensor in your data.
+
+input_number:
+  aio_demo_temperature:
+    name: AIO demo temperature setpoint
+    icon: mdi:thermometer-lines
+    min: 15
+    max: 30
+    step: 0.1
+    unit_of_measurement: "°C"
+    mode: slider
+
+template:
+  - sensor:
+      - name: AIO demo temperature
+        unique_id: aio_demo_temperature
+        icon: mdi:thermometer
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        availability: "{{ has_value('input_number.aio_demo_temperature') }}"
+        state: "{{ states('input_number.aio_demo_temperature') }}"
+
+# Dashboard card (Edit dashboard > Add card > Manual), paste without the leading '# ':
+#
+# type: vertical-stack
+# cards:
+#   - type: entities
+#     title: Azure IoT Operations demo
+#     entities:
+#       - entity: input_number.aio_demo_temperature
+#         name: Set a value
+#       - entity: sensor.aio_demo_temperature
+#         name: Sent to Azure
+#   - type: history-graph
+#     title: Last hour
+#     hours_to_show: 1
+#     entities:
+#       - entity: sensor.aio_demo_temperature

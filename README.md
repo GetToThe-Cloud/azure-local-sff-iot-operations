@@ -16,6 +16,8 @@ Scripts and blog material for the [gettothe.cloud](https://gettothe.cloud) serie
 | `scripts/Enable-AioHomeAssistantAdls.ps1` | Creates a storage account with hierarchical namespace, a Delta schema, a dataflow endpoint and a dataflow to ADLS Gen2, and writes the Home Assistant package and the DuckDB queries (part 6) |
 | `scripts/Enable-AioHomeAssistantAdx.ps1` | Sends Home Assistant states to Azure Data Explorer through an AIO dataflow and sets up the whole ADX side: cluster (Dev/Test SKU), database, raw and typed tables with an update policy, permissions, Delta schema, dataflow endpoint and dataflow. Includes a self-test via the mqtt-client pod and writes the Home Assistant automation |
 | `scripts/ha-adls-config/` | Example output of `Enable-AioHomeAssistantAdls.ps1`: schema, dataflow endpoint and dataflow definitions, the Home Assistant package and automation, and the DuckDB queries |
+| `scripts/Start-AioAdlsDemo.ps1` | Live demo of the Home Assistant to ADLS chain: follows one value from Home Assistant to the AIO MQTT broker and into the Delta table, with timings. `-Mode Prepare` lowers the dataflow endpoint batching for the demo, `-Mode Restore` puts it back |
+| `scripts/ha-demo/aio_demo.yaml` | Home Assistant package for the demo: a slider and a temperature sensor that follows it, plus a dashboard card |
 
 ## Part 1 in brief
 
